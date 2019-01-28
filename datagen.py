@@ -44,7 +44,7 @@ class SiameseCifarLoader:
             # second image
             x_2, y_2 = self.dset[np.random.randint(0, self.set_length - 1)]
             x[1] = np.array(x_2, dtype='uint8')
-            y = y_1 == y_2
+            y = y_1 != y_2
 
             # preprocess
             x = x.astype('float32')

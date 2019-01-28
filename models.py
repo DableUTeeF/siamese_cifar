@@ -4,6 +4,27 @@ from torch.nn import functional as F
 import time
 import sys
 import numpy as np
+import torch
+
+
+class ContrastiveLoss(torch.nn.Module):
+    """
+    Contrastive loss function.
+    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    """
+
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        euclidean_distance = F.pairwise_distance(output1, output2)
+        cosine_similarity = 1/F.cosine_similarity(output1, output2)
+        euclidean_distance = cosine_similarity
+        loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
+                                      label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
+
+        return loss_contrastive
 
 
 class Progbar(object):
@@ -309,7 +330,7 @@ class Model:
             history['val_loss'] = []
             history['val_acc'] = []
         for e in range(epoch):
-            print('Epoch:', e+1)
+            print('Epoch:', e + 1)
             self.lastext = ''
             self.start_epoch_time = time.time()
             self.last_print_time = self.start_epoch_time
@@ -323,19 +344,20 @@ class Model:
                 targets = targets.to(self.device).float()
                 inputs = inputs.permute(0, 1, 4, 2, 3).float()
                 output_a, output_b = self.model(inputs[:, 0], inputs[:, 1])
-                distant = self.similarity(output_a, output_b)
-                loss = self.loss(distant, targets)
+                distant = F.cosine_similarity(output_a, output_b)
+                # loss = self.loss(distant, targets)
+                loss = self.loss(output_a, output_b, targets)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
                 predict = torch.round(distant)
-                acc += torch.sum(predict == targets).cpu().detach().numpy()
+                acc += torch.sum(predict != targets).cpu().detach().numpy()
                 total += targets.size(0)
                 total_loss += loss.cpu().detach().numpy()
-                progbar.update(idx-1, [['loss', total_loss / (idx + 1)],
-                                     ['acc', acc / total],
-                                     ])
+                progbar.update(idx - 1, [['loss', total_loss / (idx + 1)],
+                                         ['acc', acc / total],
+                                         ])
             metrix = [['loss', total_loss / len(generator)],
                       ['acc', acc / total],
                       ]
@@ -366,10 +388,10 @@ class Model:
                 targets = targets.to(self.device).float()
                 inputs = inputs.permute(0, 1, 4, 2, 3).float()
                 output_a, output_b = self.model(inputs[:, 0], inputs[:, 1])
-                distant = self.similarity(output_a, output_b)
-                loss = self.loss(distant, targets)
+                distant = F.cosine_similarity(output_a, output_b)
+                loss = self.loss(output_a, output_b, targets)
                 predict = torch.round(distant)
-                acc += torch.sum(predict == targets).cpu().detach().numpy()
+                acc += torch.sum(predict != targets).cpu().detach().numpy()
                 total += predict.size(0)
                 total_loss += loss.cpu().detach().numpy()
         return acc, total, total_loss, len(generator)

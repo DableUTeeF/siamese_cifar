@@ -1,11 +1,11 @@
-from models import Model, ResNet
+from models import Model, ResNet, ContrastiveLoss
 from datagen import SiameseCifarLoader
 import os
 
 
 if __name__ == '__main__':
     model = Model(ResNet())
-    model.compile('sgd', None)
+    model.compile('sgd', ContrastiveLoss())
     model.cuda()
 
     try:
