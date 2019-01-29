@@ -3,5 +3,4 @@ datasets/*
 checkpoint/*
 k/weights/*
 __pycache__/*
-logs/*
 *.pyc

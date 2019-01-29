@@ -374,6 +374,7 @@ class Model:
             progbar.update(len(generator), metrix, force=True)
             if lrstep:
                 schedule.step()
+        return history
 
     def evaluate_generator(self, generator):
         if self.loss is None:
@@ -397,3 +398,9 @@ class Model:
                 total += predict.size(0)
                 total_loss += loss.cpu().detach().numpy()
         return acc, total, total_loss, len(generator)
+
+    def save_weights(self, path):
+        state = {
+            'net': self.model.state_dict(),
+        }
+        torch.save(state, path)
