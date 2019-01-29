@@ -17,4 +17,4 @@ if __name__ == '__main__':
     datagen = SiameseCifarLoader(os.path.join(rootpath, name))
     train_generator = datagen.get_trainset(64, 8)
     val_geerator = datagen.get_testset(100, 8)
-    model.fit_generator(train_generator, 200, validation_data=val_geerator, lrstep=[15, 50, 85, 150])
+    model.fit_generator(train_generator, 200, validation_data=val_geerator, lrstep=[50, 150])

@@ -18,9 +18,9 @@ class ContrastiveLoss(torch.nn.Module):
         self.margin = margin
 
     def forward(self, output1, output2, label):
-        euclidean_distance = F.pairwise_distance(output1, output2)
-        cosine_similarity = 1/F.cosine_similarity(output1, output2)
-        euclidean_distance = cosine_similarity
+        # euclidean_distance = F.pairwise_distance(output1, output2)
+        cosine_similarity = F.cosine_similarity(output1, output2)
+        euclidean_distance = 1/cosine_similarity
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
                                       label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
 
@@ -240,6 +240,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
+        self.linear = nn.Linear(256, 1024)
 
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
@@ -257,6 +258,7 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.adaptive_avg_pool2d(out, (1, 1))
         out = out.view(out.size(0), -1)
+        out = self.linear(out)
         return out
 
     def forward(self, image_a, image_b):
@@ -302,7 +304,7 @@ class Model:
     def compile(self, optimizer, loss):
         if optimizer in ['sgd', 'SGD']:
             self.optimizer = torch.optim.SGD(self.model.parameters(),
-                                             lr=0.1,
+                                             lr=0.01,
                                              momentum=0.9,
                                              weight_decay=1e-4)
         elif optimizer in ['adam', 'Adam']:
