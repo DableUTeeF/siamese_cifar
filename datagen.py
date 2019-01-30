@@ -49,6 +49,7 @@ class SiameseCifarLoader:
             # preprocess
             x = x.astype('float32')
             x /= 255.
+            x = np.rollaxis(x, 3, 1)
             return x, y
 
     class Loader(DataLoader):
