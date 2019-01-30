@@ -10,7 +10,7 @@ from torch.nn import functional as F
 class ThresholdAcc:
     def __call__(self, inputs, targets):
         distant = F.cosine_similarity(inputs[0], inputs[1])
-        predict = (distant > 0.8).long()
+        predict = (distant > 0.7).long()
         acc = torch.sum(predict != targets)
         return acc
 
