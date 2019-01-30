@@ -11,7 +11,7 @@ class ThresholdAcc:
     def __call__(self, inputs, targets):
         distant = F.cosine_similarity(inputs[0], inputs[1])
         predict = (distant > 0.7).long()
-        acc = torch.sum(predict != targets)
+        acc = torch.sum(predict != targets.long()).float() / targets.size(0)
         return acc
 
     def __str__(self):
@@ -20,7 +20,13 @@ class ThresholdAcc:
 
 if __name__ == '__main__':
     model = Model(ResNet())
-    model.compile('sgd', ContrastiveLoss(), metric=ThresholdAcc(), device='cuda')
+    model.compile(torch.optim.SGD(model.model.parameters(),
+                                  lr=0.01,
+                                  momentum=0.9,
+                                  weight_decay=1e-4),
+                  ContrastiveLoss(),
+                  metric=ThresholdAcc(),
+                  device='cuda')
 
     try:
         os.listdir('/root')
@@ -29,7 +35,7 @@ if __name__ == '__main__':
         rootpath = '/home/palm/PycharmProjects/DATA/'
     name = 'cifar10'
     datagen = SiameseCifarLoader(os.path.join(rootpath, name))
-    train_generator = datagen.get_trainset(16, 1)
+    train_generator = datagen.get_trainset(64, 1)
     val_geerator = datagen.get_testset(100, 1)
     h = model.fit_generator(train_generator, 200, validation_data=val_geerator, lrstep=[100, 150])
     model.save_weights('2.h5')
